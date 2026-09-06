@@ -1,0 +1,3 @@
+[files]
+# Ignore build output even when checking a source archive without .git metadata.
+extend-exclude = ["target"]

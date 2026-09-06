@@ -1,0 +1,40 @@
+[package]
+name = "selfupdate-rs"
+version = "0.1.0"
+edition = "2024"
+description = "Synchronous self-update workflows with release channels for Rust CLIs"
+repository = "https://github.com/SentioLabs/selfupdate-rs"
+license = "MIT"
+authors = ["Sentio Labs"]
+readme = "README.md"
+keywords = ["self-update", "github", "cli", "releases"]
+categories = ["command-line-interface"]
+include = ["src/**", "tests/**", "examples/**", "Cargo.toml", "Cargo.lock", "README.md", "LICENSE"]
+
+[features]
+default = []
+clap = ["dep:clap"]
+
+[dependencies]
+clap = { version = "4.5", optional = true, features = ["string"] }
+regex = "1.11"
+reqwest = { version = "0.13", default-features = false, features = ["blocking", "json", "rustls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+
+[target.'cfg(any(target_os = "linux", target_os = "macos"))'.dependencies]
+nix = { version = "0.30", features = ["signal", "process"] }
+
+[dev-dependencies]
+tempfile = "3"
+
+[target.'cfg(any(target_os = "linux", target_os = "macos"))'.dev-dependencies]
+nix = { version = "0.30", features = ["term"] }
+
+[[example]]
+name = "clap"
+required-features = ["clap"]
+
+[lints.rust]
+missing_docs = "warn"

@@ -1,0 +1,100 @@
+# Adapted from bfirestone/worktrunk-wip's Release Please + crates.io workflow.
+name: release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  release-please:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write # create release PR, tag, and GitHub release
+      pull-requests: write
+      actions: write # dispatch CI for the bot-created release PR
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          release-type: rust
+
+      # GITHUB_TOKEN-created PRs do not trigger pull_request workflows.
+      # Dispatch CI explicitly so release PRs can satisfy required checks.
+      - name: Run CI on the release PR
+        if: steps.release.outputs.prs_created == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_BRANCH: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+        run: gh workflow run ci.yaml --ref "$RELEASE_BRANCH"
+
+  # Check the released version on every supported platform before publishing.
+  verify:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    uses: ./.github/workflows/ci.yaml
+    with:
+      ref: refs/tags/${{ needs.release-please.outputs.tag_name }}
+
+  # Tags created with GITHUB_TOKEN do not trigger other workflows, so publishing
+  # stays in this workflow as a gated job, as in worktrunk-wip.
+  publish:
+    needs: [release-please, verify]
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    concurrency:
+      group: crates-io-publish
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write # crates.io Trusted Publishing (OIDC)
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: refs/tags/${{ needs.release-please.outputs.tag_name }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Check release tag
+        env:
+          RELEASE_TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import pathlib
+          import tomllib
+
+          package = tomllib.loads(pathlib.Path("Cargo.toml").read_text())["package"]
+          expected = "v" + package["version"]
+          actual = os.environ["RELEASE_TAG"]
+          if actual != expected:
+              raise SystemExit(f"Release tag {actual!r} does not match Cargo.toml ({expected!r})")
+          print(f"Publishing {package['name']} {package['version']} from {actual}")
+          PY
+
+      - name: Test release (default features)
+        run: cargo test --release --locked
+      - name: Test release (all features)
+        run: cargo test --release --locked --all-features
+
+      - name: Authenticate with crates.io
+        id: auth
+        uses: rust-lang/crates-io-auth-action@v1
+
+      - name: Publish to crates.io
+        run: cargo publish --locked
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
