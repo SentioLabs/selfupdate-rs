@@ -1,7 +1,7 @@
 //! Optional Clap builders and dispatch.
 #![cfg(feature = "clap")]
 use ::clap::{Arg, Command, error::ErrorKind};
-use selfupdate_rs::{clap as commands, *};
+use selfupdate::{clap as commands, *};
 use std::{cell::RefCell, io, rc::Rc};
 
 struct Fake;

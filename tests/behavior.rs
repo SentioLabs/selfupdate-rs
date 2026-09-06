@@ -1,6 +1,6 @@
 //! Ported Go workflows and compatibility regressions.
 use regex::Regex;
-use selfupdate_rs::*;
+use selfupdate::*;
 use std::{
     cell::{Cell, RefCell},
     cmp::Ordering,

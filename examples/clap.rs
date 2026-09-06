@@ -1,8 +1,8 @@
 //! Embed under a parent that already uses `-c` for configuration.
 use clap::{Arg, Command};
-use selfupdate_rs::{CancellationToken, GitHubSource, MemStore, Updater, clap as commands};
+use selfupdate::{CancellationToken, GitHubSource, MemStore, Updater, clap as commands};
 
-fn main() -> selfupdate_rs::Result<()> {
+fn main() -> selfupdate::Result<()> {
     let mut updater = Updater::builder("mytool", "dev", GitHubSource::new("acme", "mytool")?)
         .store(MemStore::default())
         .build();

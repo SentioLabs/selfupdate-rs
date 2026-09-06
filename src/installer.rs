@@ -198,7 +198,7 @@ mod supported {
                     "pipefail",
                     "-c",
                     PROGRAM,
-                    "selfupdate-rs",
+                    "selfupdate",
                     &self.url,
                     tag,
                 ])

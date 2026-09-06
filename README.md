@@ -1,13 +1,13 @@
-# selfupdate-rs
+# selfupdate
 
 Synchronous self-update with release channels for Rust CLIs publishing GitHub
 releases. A Rust port of [Sentio Labs' go-selfupdate](https://github.com/sentiolabs/go-selfupdate),
-retaining its MIT license and attribution. Version 0.1.0 uses Rust 2024.
+retaining its MIT license and attribution. This library uses Rust 2024.
 
 ```no_run
-use selfupdate_rs::{CancellationToken, GitHubSource, ScriptInstaller, UpdateOptions, Updater};
+use selfupdate::{CancellationToken, GitHubSource, ScriptInstaller, UpdateOptions, Updater};
 
-# fn main() -> selfupdate_rs::Result<()> {
+# fn main() -> selfupdate::Result<()> {
 let mut updater = Updater::builder("mytool", env!("CARGO_PKG_VERSION"),
     GitHubSource::new("acme", "mytool")?)
     .installer(ScriptInstaller::new(
@@ -18,8 +18,13 @@ updater.update(&CancellationToken::new(), UpdateOptions { check: true, ..Default
 # }
 ```
 
-Add `selfupdate-rs = "0.1"` to Cargo.toml. Optional command integration uses
-`selfupdate-rs = { version = "0.1", features = ["clap"] }`.
+Add `selfupdate = "0.1"` to Cargo.toml. Optional command integration uses
+`selfupdate = { version = "0.1", features = ["clap"] }`.
+
+The crate is published as `selfupdate`; its GitHub repository remains
+[`SentioLabs/selfupdate-rs`](https://github.com/SentioLabs/selfupdate-rs).
+Version 0.1.0 was published under the earlier package name `selfupdate-rs`;
+releases from 0.1.1 use `selfupdate`.
 
 ## Workflows
 
@@ -69,7 +74,7 @@ Tag nightlies with the *next* version so they sort above the existing stable rel
 
 `GitHubSource::builder` accepts an API base (including enterprise paths), bearer
 token, blocking Reqwest client, and nonzero per-request timeout (default 30 seconds).
-Every request sets GitHub's JSON Accept header and a `selfupdate-rs/<version>`
+Every request sets GitHub's JSON Accept header and a `selfupdate/<version>`
 User-Agent, including when using a supplied client. Timeouts include response body
 reads. See [Reqwest's blocking client configuration](https://docs.rs/reqwest/latest/reqwest/blocking/struct.ClientBuilder.html).
 Use this synchronous library outside an async runtime; an async application should
@@ -165,12 +170,12 @@ Before enabling releases in the hosting repository:
 
 1. Allow GitHub Actions to create pull requests in the repository's Actions
    settings. The workflow declares its required token permissions.
-2. Establish ownership of `selfupdate-rs` on crates.io. If the crate is new,
+2. Establish ownership of `selfupdate` on crates.io. If the crate is new,
    complete the initial authenticated publish before configuring its trusted
    publisher; confirm the crate name is available first.
-3. In the crate's Trusted Publishing settings, enter the hosting GitHub owner,
-   repository, and workflow filename **`release.yaml`**. This workflow does not
-   specify a GitHub environment, so leave that restriction unset. See the
+3. In the crate's Trusted Publishing settings, enter owner **`SentioLabs`**,
+   repository **`selfupdate-rs`**, and workflow filename **`release.yaml`**. This
+   workflow does not specify a GitHub environment, so leave that restriction unset. See the
    [crates.io setup documentation](https://crates.io/docs/trusted-publishing).
 
 The publish job obtains a short-lived token with

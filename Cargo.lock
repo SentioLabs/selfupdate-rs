@@ -1089,8 +1089,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "selfupdate-rs"
-version = "0.1.0"
+name = "selfupdate"
+version = "0.1.1"
 dependencies = [
  "clap",
  "nix",

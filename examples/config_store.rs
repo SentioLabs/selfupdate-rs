@@ -1,8 +1,8 @@
 //! A channel file adapted through closures; call `switch_channel` to save it.
-use selfupdate_rs::{CancellationToken, Channel, Error, FuncStore, GitHubSource, Updater};
+use selfupdate::{CancellationToken, Channel, Error, FuncStore, GitHubSource, Updater};
 use std::{fs, io, path::PathBuf};
 
-fn main() -> selfupdate_rs::Result<()> {
+fn main() -> selfupdate::Result<()> {
     let path = PathBuf::from("mytool-channel.txt");
     let read_path = path.clone();
     let store = FuncStore::new(

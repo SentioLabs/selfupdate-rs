@@ -1,7 +1,7 @@
 //! GitHub API integration against a local HTTP server.
 mod common;
 use common::{Reply, Server, wait_until};
-use selfupdate_rs::*;
+use selfupdate::*;
 use std::{
     thread,
     time::{Duration, Instant},
@@ -46,7 +46,10 @@ fn latest_headers_token_and_enterprise_base() {
     assert!(request.starts_with("get /api/v3/repos/acme/tool/releases/latest http/1.1"));
     assert!(request.contains("accept: application/vnd.github+json\r\n"));
     assert!(request.contains("authorization: bearer secret\r\n"));
-    assert!(request.contains("user-agent: selfupdate-rs/0.1.0\r\n"));
+    assert!(request.contains(&format!(
+        "user-agent: selfupdate/{}\r\n",
+        env!("CARGO_PKG_VERSION")
+    )));
 }
 
 #[test]

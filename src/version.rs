@@ -18,8 +18,8 @@ pub fn normalize_version(version: &str) -> String {
 ///
 /// ```
 /// use std::cmp::Ordering;
-/// assert_eq!(selfupdate_rs::compare("1.0.0", "v2.0.0"), Ordering::Greater);
-/// assert_eq!(selfupdate_rs::compare("1.0.0+one", "1.0.0+two"), Ordering::Equal);
+/// assert_eq!(selfupdate::compare("1.0.0", "v2.0.0"), Ordering::Greater);
+/// assert_eq!(selfupdate::compare("1.0.0+one", "1.0.0+two"), Ordering::Equal);
 /// ```
 pub fn compare(current: &str, latest: &str) -> Ordering {
     compare_raw(&normalize_version(latest), &normalize_version(current))

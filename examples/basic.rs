@@ -1,7 +1,7 @@
 //! Basic check-only integration.
-use selfupdate_rs::{CancellationToken, GitHubSource, ScriptInstaller, UpdateOptions, Updater};
+use selfupdate::{CancellationToken, GitHubSource, ScriptInstaller, UpdateOptions, Updater};
 
-fn main() -> selfupdate_rs::Result<()> {
+fn main() -> selfupdate::Result<()> {
     let mut updater = Updater::builder("mytool", "dev", GitHubSource::new("acme", "mytool")?)
         .installer(ScriptInstaller::new(
             "https://example.com/mytool/install.sh",

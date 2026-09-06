@@ -1,6 +1,6 @@
 //! Portable core exposes an explicit unsupported script-installation result.
 #![cfg(not(any(target_os = "linux", target_os = "macos")))]
-use selfupdate_rs::{CancellationToken, Error, Installer, ScriptInstaller};
+use selfupdate::{CancellationToken, Error, Installer, ScriptInstaller};
 
 #[test]
 fn unsupported_platform_is_explicit() {

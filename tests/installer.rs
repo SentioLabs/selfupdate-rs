@@ -8,7 +8,7 @@ use nix::{
     sys::signal::{Signal, kill, killpg},
     unistd::{Pid, getpgrp},
 };
-use selfupdate_rs::*;
+use selfupdate::*;
 use std::{
     fs::{self, File},
     io::{Read, Write},

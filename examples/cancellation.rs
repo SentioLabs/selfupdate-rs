@@ -1,8 +1,8 @@
 //! Cancellation from another thread; HTTP requests remain bounded by timeout.
-use selfupdate_rs::{CancellationToken, GitHubSource, Updater};
+use selfupdate::{CancellationToken, GitHubSource, Updater};
 use std::{thread, time::Duration};
 
-fn main() -> selfupdate_rs::Result<()> {
+fn main() -> selfupdate::Result<()> {
     let token = CancellationToken::new();
     let cancel = token.clone();
     let worker = thread::spawn(move || {
