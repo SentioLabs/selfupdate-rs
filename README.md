@@ -150,36 +150,3 @@ cargo package --all-features
 Tests use fakes, local HTTP servers, harmless temporary scripts, and a Unix PTY;
 they never replace the test binary. CI runs these checks on Linux/macOS and core,
 HTTP, and Clap tests on Windows.
-
-## Releases and crates.io
-
-The workflows follow [worktrunk-wip's CI/CD setup](https://github.com/bfirestone/worktrunk-wip/tree/c4ca00f8e5ba9e962b427d93bd903df0de57a89c/.github/workflows):
-Release Please prepares Rust version/changelog PRs from conventional commits on
-`main`. Merging a release PR creates the tag and GitHub release. The release
-workflow then runs the full CI matrix against that tag, tests both feature sets
-in release mode, checks that the tag matches `Cargo.toml`, and publishes the crate
-using crates.io Trusted Publishing (OIDC).
-
-Publishing runs as a dependent job in `release.yaml`, because tags created with
-`GITHUB_TOKEN` do not start separate workflows. The same limitation affects
-bot-created PRs, so the release workflow explicitly dispatches `ci.yaml` on the
-release PR branch. Normal PRs and pushes to `main` run CI automatically. Rust
-builds use `Swatinem/rust-cache`, and Linux CI also runs the template's typo check.
-
-Before enabling releases in the hosting repository:
-
-1. Allow GitHub Actions to create pull requests in the repository's Actions
-   settings. The workflow declares its required token permissions.
-2. Establish ownership of `selfupdate` on crates.io. If the crate is new,
-   complete the initial authenticated publish before configuring its trusted
-   publisher; confirm the crate name is available first.
-3. In the crate's Trusted Publishing settings, enter owner **`SentioLabs`**,
-   repository **`selfupdate-rs`**, and workflow filename **`release.yaml`**. This
-   workflow does not specify a GitHub environment, so leave that restriction unset. See the
-   [crates.io setup documentation](https://crates.io/docs/trusted-publishing).
-
-The publish job obtains a short-lived token with
-`rust-lang/crates-io-auth-action@v1`; no long-lived crates.io secret is needed for
-subsequent releases. If publishing fails after the tag is created, fix the setup
-and rerun the failed jobs in that original release run. A new push alone will not
-re-publish an already-created release. Registry versions cannot be overwritten.
