@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/SentioLabs/selfupdate-rs/compare/v0.1.1...v0.1.2) (2026-09-06)
+
+
+### Bug Fixes
+
+* synchronize HTTP cancellation tests ([135eae8](https://github.com/SentioLabs/selfupdate-rs/commit/135eae81233209af3f4ab62b474c43463f6d5007))
+
 ## [0.1.1](https://github.com/SentioLabs/selfupdate-rs/compare/v0.1.0...v0.1.1) (2026-09-06)
 
 
