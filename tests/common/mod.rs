@@ -17,6 +17,8 @@ pub struct Reply {
     pub body: String,
     pub before_headers: Duration,
     pub before_body: Duration,
+    pub on_request: Option<Box<dyn FnOnce() + Send>>,
+    pub on_headers: Option<Box<dyn FnOnce() + Send>>,
 }
 impl Reply {
     pub fn ok(body: &str) -> Self {
@@ -25,6 +27,8 @@ impl Reply {
             body: body.into(),
             before_headers: Duration::ZERO,
             before_body: Duration::ZERO,
+            on_request: None,
+            on_headers: None,
         }
     }
 }
@@ -76,6 +80,9 @@ impl Server {
                 }
                 recorded.lock().unwrap().push(request);
                 let reply = replies.pop_front().expect("unexpected HTTP request");
+                if let Some(on_request) = reply.on_request {
+                    on_request();
+                }
                 thread::sleep(reply.before_headers);
                 let header = format!(
                     "HTTP/1.1 {} Test\r\nContent-Length: {}\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n",
@@ -83,6 +90,9 @@ impl Server {
                     reply.body.len()
                 );
                 if stream.write_all(header.as_bytes()).is_ok() {
+                    if let Some(on_headers) = reply.on_headers {
+                        on_headers();
+                    }
                     thread::sleep(reply.before_body);
                     // A timeout or cancellation may close the peer before the response.
                     let _ = stream.write_all(reply.body.as_bytes());

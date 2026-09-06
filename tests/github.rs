@@ -1,11 +1,8 @@
 //! GitHub API integration against a local HTTP server.
 mod common;
-use common::{Reply, Server, wait_until};
+use common::{Reply, Server};
 use selfupdate::*;
-use std::{
-    thread,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
 fn github(server: &Server) -> GitHubSource {
     GitHubSource::builder("acme", "tool")
@@ -193,27 +190,19 @@ fn cancellation_before_request_and_after_headers_or_body() {
     token.clone().cancel();
     assert!(github(&server).latest(&token).unwrap_err().is_cancelled());
     assert!(server.requests().is_empty());
-    for body_delay in [false, true] {
-        let mut reply = Reply::ok(r#"{"tag_name":"v1.0.0"}"#);
-        if body_delay {
-            reply.before_body = Duration::from_millis(150);
-        } else {
-            reply.before_headers = Duration::from_millis(150);
-        }
-        let server = Server::new(vec![reply]);
-        let requests = server.requests.clone();
+    for after_headers in [false, true] {
         let token = CancellationToken::new();
         let cancel = token.clone();
-        let worker = thread::spawn(move || {
-            wait_until(
-                || !requests.lock().unwrap().is_empty(),
-                Duration::from_secs(3),
-            );
-            thread::sleep(Duration::from_millis(30));
-            cancel.cancel();
-        });
+        let mut reply = Reply::ok(r#"{"tag_name":"v1.0.0"}"#);
+        // Cancel before the server releases the headers or body. Fixed sleeps
+        // let a delayed cancellation thread lose the race on busy CI runners.
+        if after_headers {
+            reply.on_headers = Some(Box::new(move || cancel.cancel()));
+        } else {
+            reply.on_request = Some(Box::new(move || cancel.cancel()));
+        }
+        let server = Server::new(vec![reply]);
         assert!(github(&server).latest(&token).unwrap_err().is_cancelled());
-        worker.join().unwrap();
         assert_eq!(server.requests().len(), 1);
     }
 }
