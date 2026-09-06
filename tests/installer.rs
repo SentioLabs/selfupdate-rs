@@ -196,7 +196,8 @@ fn cancellation_stops_descendants_and_reaps_pipeline_leader() {
     assert_ne!(guard.0, getpgrp().as_raw());
     let start = Instant::now();
     cancel.cancel();
-    assert!(worker.join().unwrap().unwrap_err().is_cancelled());
+    let error = worker.join().unwrap().unwrap_err();
+    assert!(error.is_cancelled(), "expected cancellation, got {error:?}");
     assert!(start.elapsed() < Duration::from_secs(8));
     wait_until(
         || pids.iter().all(|&pid| !running(pid)),
@@ -204,6 +205,60 @@ fn cancellation_stops_descendants_and_reaps_pipeline_leader() {
     );
     // The direct child must have been reaped, not merely left as a zombie.
     assert_eq!(kill(Pid::from_raw(pids[2]), None), Err(Errno::ESRCH));
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn cancellation_waits_for_zombie_only_process_group() {
+    // Keep a child in the installer's group unreaped so Darwin's transient
+    // killpg(EPERM) is deterministic instead of depending on scheduler timing.
+    struct Zombie(std::process::Child);
+    impl Drop for Zombie {
+        fn drop(&mut self) {
+            let _ = self.0.kill();
+            let _ = self.0.wait();
+        }
+    }
+
+    let dir = tempfile::tempdir().unwrap();
+    let ready = dir.path().join("ready");
+    let url = script(
+        dir.path(),
+        &format!("printf '%s\\n' \"$PPID\" > {}\nsleep 30\n", quoted(&ready)),
+    );
+    let token = CancellationToken::new();
+    let cancel = token.clone();
+    let worker = thread::spawn(move || quiet(url).install(&token, "v1.0.0"));
+    wait_until(
+        || fs::read_to_string(&ready).is_ok_and(|s| s.trim().parse::<i32>().is_ok()),
+        Duration::from_secs(4),
+    );
+    let group: i32 = fs::read_to_string(ready).unwrap().trim().parse().unwrap();
+    let _guard = GroupGuard(group);
+    assert_ne!(group, getpgrp().as_raw());
+    let zombie = Zombie(
+        Command::new("/usr/bin/true")
+            .process_group(group)
+            .spawn()
+            .unwrap(),
+    );
+    wait_until(|| !running(zombie.0.id() as i32), Duration::from_secs(2));
+    cancel.cancel();
+    wait_until(
+        || killpg(Pid::from_raw(group), None) == Err(Errno::EPERM),
+        Duration::from_secs(2),
+    );
+    // Give the installer several polling intervals to observe the error.
+    thread::sleep(Duration::from_millis(150));
+    let waiting_for_reaping = !worker.is_finished();
+    drop(zombie);
+    let error = worker.join().unwrap().unwrap_err();
+    assert!(
+        waiting_for_reaping,
+        "installer exited before zombie reaping"
+    );
+    assert!(error.is_cancelled(), "expected cancellation, got {error:?}");
+    assert_eq!(kill(Pid::from_raw(group), None), Err(Errno::ESRCH));
 }
 
 #[test]
@@ -256,7 +311,8 @@ fn cancellation_escalates_for_descendant_after_leader_exits() {
         running(child),
         "SIGTERM-ignoring descendant must outlive leader"
     );
-    assert!(worker.join().unwrap().unwrap_err().is_cancelled());
+    let error = worker.join().unwrap().unwrap_err();
+    assert!(error.is_cancelled(), "expected cancellation, got {error:?}");
     assert!(start.elapsed() >= Duration::from_secs(5));
     assert!(start.elapsed() < Duration::from_secs(9));
     wait_until(|| !running(child), Duration::from_secs(2));

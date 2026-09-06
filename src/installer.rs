@@ -135,14 +135,23 @@ mod supported {
             }
             return Ok(());
         };
-        signal_group(group, Some(Signal::SIGTERM))?;
         let deadline = Instant::now() + GRACE;
+        let mut signal = Some(Signal::SIGTERM);
         loop {
             // Reap the leader promptly, but keep checking the group: descendants
             // can outlive Bash, including children that ignore SIGTERM.
             child.try_wait()?;
-            if !signal_group(group, None)? {
-                break;
+            match signal_group(group, signal) {
+                Ok(false) => break,
+                Ok(true) => signal = None,
+                // Darwin's killpg skips zombies and returns EPERM if no live
+                // members remain. Wait for reaping within the existing grace
+                // period; persistent permission errors must still propagate.
+                Err(error)
+                    if cfg!(target_os = "macos")
+                        && error.raw_os_error() == Some(Errno::EPERM as i32)
+                        && Instant::now() < deadline => {}
+                Err(error) => return Err(error),
             }
             if Instant::now() >= deadline {
                 signal_group(group, Some(Signal::SIGKILL))?;
