@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/SentioLabs/selfupdate-rs/compare/v0.1.0...v0.1.1) (2026-09-06)
+
+
+### Bug Fixes
+
+* rename the published crate to selfupdate ([34ddbc0](https://github.com/SentioLabs/selfupdate-rs/commit/34ddbc002fbb9b49004439e6d498fd743ce26da0))
+
 ## 0.1.0 (2026-09-06)
 
 
