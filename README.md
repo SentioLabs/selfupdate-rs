@@ -125,16 +125,6 @@ Compiling examples in `examples/` cover `basic`, `config_store`, `pre_install`,
 `cancellation`, and `clap` (the last requires `--features clap`). The network examples
 use placeholder repositories and check-only mode; they never replace a running binary.
 
-## Differences from Go
-
-Rust uses a required-source builder, typed errors, `Ordering`, borrowed/owned
-adapters, and explicit cancellation tokens. Output errors propagate. An incomplete
-confirmation line at EOF declines, including a bare `y` without a newline.
-The stable fallback also runs when there is no matching channel release. Installer
-URLs are never interpolated into shell source, and cancellation escalates for the
-whole detached group. HTTP requests have a bounded default timeout. Script
-installation is explicitly limited to Linux/macOS.
-
 ## Verification
 
 ```sh
